@@ -1,53 +1,25 @@
-name: PW Nightly Regression Quality Gate
-run-name: Deploy ${{ inputs.feature_branch }} to stg ${{ inputs.stage }} and run regression tests
+name: PW On Demand Regression Quality Gate
+run-name: Run regression tests from ${{ github.ref_name }} on stg ${{ inputs.stage }}
 
 on:
-  schedule:
-    - cron: '0 4 * * 1-5'
   workflow_dispatch:
     inputs:
       stage:
         description: Type stage number
         required: true
-        default: '93'
         type: string
-      feature_branch:
-        description: Type feature branch to deploy
-        required: true
-        default: 'develop'
-        type: string
-
-env:
-  stage: ${{ github.event.inputs.stage == null && '93' || github.event.inputs.stage }}
 
 jobs:
-  feature_branch_deploy:
-    name: Trigger stage deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - uses: convictional/trigger-workflow-and-wait@v1.6.5
-        with:
-          owner: LinkSquares
-          repo: parvati
-          github_token: ${{ secrets.ACCESS_TOKEN }}
-          workflow_file_name: ecs-split-staging.yml
-          ref: ${{ github.event.inputs.feature_branch }}
-          wait_interval: 10
-          client_payload: '{"service":"${{ env.stage }}"}'
-
   run_tests:
     name: Playwright tests run
     runs-on: staging1
-    needs: feature_branch_deploy
     container:
-      image: mcr.microsoft.com/playwright:v1.31.0-focal
+      image: mcr.microsoft.com/playwright:v1.31.0-jammy
+      options: -m 3g --cpus=2
     timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: develop
 
       - name: Setup node
         uses: actions/setup-node@v3
