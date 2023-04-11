@@ -3,7 +3,7 @@ run-name: Deploy ${{ inputs.feature_branch }} to stg ${{ inputs.stage }} and run
 
 on:
   schedule:
-    - cron: '39 11 * * 1-5'
+    - cron: '40 15 * * 1-5'
   workflow_dispatch:
     inputs:
       stage:
@@ -19,7 +19,7 @@ on:
 
 env:
   stage: ${{ github.event.inputs.stage == null && '93' || github.event.inputs.stage }}
-  feature_branch: ${{ github.event.inputs.feature_branch == null && 'develop' || github.event.inputs.stage }}
+  feature_branch: ${{ github.event.inputs.feature_branch == null && 'develop' || github.event.inputs.feature_branch }}
 
 jobs:
   feature_branch_deploy:
