@@ -3,7 +3,7 @@ run-name: Deploy ${{ inputs.feature_branch }} to stg ${{ inputs.stage }} and run
 
 on:
   schedule:
-    - cron: '40 11 * * 1-5'
+    - cron: '39 11 * * 1-5'
   workflow_dispatch:
     inputs:
       stage:
