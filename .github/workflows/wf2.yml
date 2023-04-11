@@ -3,7 +3,7 @@ run-name: Deploy ${{ inputs.feature_branch }} to stg ${{ inputs.stage }} and run
 
 on:
   schedule:
-    - cron: '0 4 * * 1-5'
+    - cron: '35 15 * * 1-5'
   workflow_dispatch:
     inputs:
       stage:
@@ -19,6 +19,7 @@ on:
 
 env:
   stage: ${{ github.event.inputs.stage == null && '93' || github.event.inputs.stage }}
+  feature_branch: ${{ github.event.inputs.feature_branch == null && 'develop' || github.event.inputs.stage }}
 
 jobs:
   feature_branch_deploy:
@@ -30,17 +31,19 @@ jobs:
         with:
           owner: DmitriiLinkSquares
           repo: actions
-          workflow_file_name: new-file.yml
-          ref: ${{ github.event.inputs.feature_branch }}
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          workflow_file_name: test.yml
+          ref: ${{ env.feature_branch }}
           wait_interval: 10
-          client_payload: '{"stage":"${{ env.stage }}"}'
+          client_payload: '{"service":"${{ env.stage }}"}'
 
   run_tests:
     name: Playwright tests run
     runs-on: staging1
     needs: feature_branch_deploy
     container:
-      image: mcr.microsoft.com/playwright:v1.31.0-jammy
+      image: mcr.microsoft.com/playwright:v1.31.0-focal
+      options: -m 3g
     timeout-minutes: 45
     steps:
       - name: Checkout
