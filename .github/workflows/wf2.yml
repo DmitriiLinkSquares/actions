@@ -30,7 +30,6 @@ jobs:
 
   run_tests:
     name: Playwright tests run
-    needs: feature_branch_deploy
     runs-on: ubuntu-latest
     steps:
       - name: Hey
