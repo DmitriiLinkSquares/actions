@@ -13,6 +13,7 @@ on:
 
 jobs:
   feature_branch_deploy:
+    if: ${{ inputs.stage == 'true' }}
     name: Trigger stage deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
