@@ -9,11 +9,10 @@ on:
       stage:
         type: boolean
         description: Run ECS Service on Fargate On-Demand. By default its Fargate Spot.
-        default: false
 
 jobs:
   feature_branch_deploy:
-    if: inputs.stage == 'true'
+    if: github.event.inputs.stage == 'true
     name: Trigger stage deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
