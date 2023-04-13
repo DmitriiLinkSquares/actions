@@ -16,7 +16,7 @@ on:
 jobs:
   run_tests:
     name: Playwright tests run
-    runs-on: staging1
+    runs-on: ubuntu-latest
     container:
       image: mcr.microsoft.com/playwright:v1.31.0-focal
       options: --ipc=host
