@@ -1,12 +1,22 @@
-name: PW Nightly Regression Quality Gate
-run-name: Deploy develop to stg 93 and run regression tests
+name: PW On Demand Regression Quality Gate
+run-name: Run regression tests from ${{ github.ref_name }} on stg ${{ inputs.stage }}
 
 on:
-  schedule:
-    - cron: '0 4 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: Type stage number
+        required: true
+        type: string
+      deploy_feature_branch:
+        description: Deploy feature branch?
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   feature_branch_deploy:
+    if: github.event.inputs.deploy_feature_branch == 'true'
     name: Trigger stage deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -17,14 +27,17 @@ jobs:
           repo: parvati
           github_token: ${{ secrets.ACCESS_TOKEN }}
           workflow_file_name: ecs-split-staging.yml
-          ref: develop
+          ref: ${{ github.ref_name }}
           wait_interval: 10
-          client_payload: '{"service":"93"}'
+          client_payload: '{"service":"${{ github.event.inputs.stage }}"}'
 
   run_tests:
+    needs: feature_branch_deploy
+    if: |
+      always() &&
+      (needs.feature_branch_deploy.result == 'success' || needs.feature_branch_deploy.result == 'skipped')
     name: Playwright tests run
     runs-on: staging1
-    needs: feature_branch_deploy
     container:
       image: mcr.microsoft.com/playwright:v1.31.0-jammy
       options: --ipc=host
@@ -33,7 +46,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
         with:
-          ref: develop
+          ref: ${{ github.ref_name }}
 
       - name: Setup node
         uses: actions/setup-node@v3
@@ -47,18 +60,18 @@ jobs:
         run: yarn playwright test --grep @finalize-regression --config playwright-regression.config.ts
         env:
           E2E_FINALIZE_PASSWORD: ${{ secrets.USER_PASSWORD }}
-          E2E_FINALIZE_WEB_BASE_URL: https://automation.finalize-app-${{ env.stage }}.linksquares.dev
-          E2E_GRAPHQL_BASE_URL: https://app.analyze-app-${{ env.stage }}.linksquares.dev/graphql
-          E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ env.stage }}.linksquares.dev
+          E2E_FINALIZE_WEB_BASE_URL: https://automation.finalize-app-${{ github.event.inputs.stage }}.linksquares.dev
+          E2E_GRAPHQL_BASE_URL: https://app.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev/graphql
+          E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: nightly-regression-report
+          name: regression-run-report
           path: e2e/report
           retention-days: 14
 
       - name: Adding note
         if: always()
-        run: echo 'Open index.html from the nightly-regression-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
+        run: echo 'Open index.html from the regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
