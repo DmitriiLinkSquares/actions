@@ -1,5 +1,5 @@
-name: PW On Demand Regression Quality Gate
-run-name: Run regression tests from ${{ github.ref_name }} on stg ${{ inputs.stage }}
+name: PW Run Single Spec
+run-name: Run ${{ inputs.specName }} spec on stg ${{ inputs.stage }}
 
 on:
   workflow_dispatch:
@@ -8,45 +8,22 @@ on:
         description: Type stage number
         required: true
         type: string
-      deploy_feature_branch:
-        description: Deploy feature branch?
-        required: false
-        type: boolean
-        default: false
+      specName:
+        type: string
+        required: true
+        description: Type spec name
 
 jobs:
-  feature_branch_deploy:
-    if: github.event.inputs.deploy_feature_branch == 'true'
-    name: Trigger stage deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - uses: convictional/trigger-workflow-and-wait@v1.6.5
-        with:
-          owner: LinkSquares
-          repo: parvati
-          github_token: ${{ secrets.ACCESS_TOKEN }}
-          workflow_file_name: ecs-split-staging.yml
-          ref: ${{ github.ref_name }}
-          wait_interval: 10
-          client_payload: '{"service":"${{ github.event.inputs.stage }}"}'
-
   run_tests:
-    needs: feature_branch_deploy
-    if: |
-      always() &&
-      (needs.feature_branch_deploy.result == 'success' || needs.feature_branch_deploy.result == 'skipped')
     name: Playwright tests run
     runs-on: staging1
     container:
-      image: mcr.microsoft.com/playwright:v1.31.0-jammy
+      image: mcr.microsoft.com/playwright:v1.31.0-focal
       options: --ipc=host
     timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.ref_name }}
 
       - name: Setup node
         uses: actions/setup-node@v3
@@ -57,7 +34,7 @@ jobs:
         run: yarn install
 
       - name: Run tests
-        run: yarn playwright test --grep @finalize-regression --config playwright-regression.config.ts
+        run: yarn playwright test ${{ github.event.inputs.specName }} --config playwright-regression.config.ts
         env:
           E2E_FINALIZE_PASSWORD: ${{ secrets.USER_PASSWORD }}
           E2E_FINALIZE_WEB_BASE_URL: https://automation.finalize-app-${{ github.event.inputs.stage }}.linksquares.dev
@@ -68,10 +45,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: regression-run-report
+          name: single-spec-report
           path: e2e/report
-          retention-days: 14
 
       - name: Adding note
         if: always()
-        run: echo 'Open index.html from the regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
+        run: echo 'Open index.html from the single-spec-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
