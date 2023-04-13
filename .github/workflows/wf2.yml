@@ -31,4 +31,6 @@ jobs:
   run_tests:
     name: Playwright tests run
     runs-on: ubuntu-latest
-    run: echo 'Open index.html from the regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
+    steps:
+      - name: Hey
+        run: echo 'Open index.html from the regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
