@@ -29,6 +29,8 @@ jobs:
           client_payload: '{"service":"${{ env.stage }}"}'
 
   run_tests:
+    needs: feature_branch_deploy
+    if: ${{ inputs.stage == true || needs.feature_branch_deploy.result == 'success' }}
     name: Playwright tests run
     runs-on: ubuntu-latest
     steps:
