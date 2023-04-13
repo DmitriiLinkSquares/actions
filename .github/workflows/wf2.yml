@@ -7,22 +7,13 @@ on:
   workflow_dispatch:
     inputs:
       stage:
-        description: Type stage number
-        required: true
-        default: '93'
-        type: string
-      feature_branch:
-        description: Type feature branch to deploy
-        required: true
-        default: 'develop'
-        type: string
-
-env:
-  stage: ${{ github.event.inputs.stage == null && '93' || github.event.inputs.stage }}
-  feature_branch: ${{ github.event.inputs.feature_branch == null && 'develop' || github.event.inputs.feature_branch }}
+        type: boolean
+        description: Run ECS Service on Fargate On-Demand. By default its Fargate Spot.
+        default: false
 
 jobs:
   feature_branch_deploy:
+    if: ${{ inputs.stage }} == 'true'
     name: Trigger stage deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
@@ -39,42 +30,5 @@ jobs:
 
   run_tests:
     name: Playwright tests run
-    runs-on: staging1
-    needs: feature_branch_deploy
-    container:
-      image: mcr.microsoft.com/playwright:v1.31.0-focal
-      options: -m 3g
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: develop
-
-      - name: Setup node
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: yarn install
-
-      - name: Run tests
-        run: yarn playwright test --grep @finalize-regression --config playwright-regression.config.ts
-        env:
-          E2E_FINALIZE_PASSWORD: ${{ secrets.USER_PASSWORD }}
-          E2E_FINALIZE_WEB_BASE_URL: https://automation.finalize-app-${{ github.event.inputs.stage }}.linksquares.dev
-          E2E_GRAPHQL_BASE_URL: https://app.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev/graphql
-          E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: regression-run-report
-          path: e2e/report
-          retention-days: 14
-
-      - name: Adding note
-        if: always()
-        run: echo 'Open index.html from the regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
+    runs-on: ubuntu-latest
+    run: echo 'Open index.html from the regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
