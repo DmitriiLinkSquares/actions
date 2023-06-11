@@ -76,9 +76,7 @@ jobs:
           E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev
 
       - name: Upload Finalize regression results
-        if: |
-          always() &&
-          (failure() || success())
+        if: failure() || success()
         uses: actions/upload-artifact@v3
         with:
           name: finalize-regression-results
@@ -95,9 +93,7 @@ jobs:
           E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev
 
       - name: Upload LS-Sign regression results
-        if: |
-          always() &&
-          (failure() || success())
+        if: failure() || success()
         uses: actions/upload-artifact@v3
         with:
           name: ls-sign-regression-results
