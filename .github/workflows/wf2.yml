@@ -67,7 +67,7 @@ jobs:
         run: yarn install
 
       - name: Run Finalize regression
-        id: fin
+        id: fin_reg
         if: github.event.inputs.run_finalize_regression == 'true'
         run: yarn playwright test --grep @finalize-regression --config playwright-regression.config.ts
         env:
@@ -79,7 +79,7 @@ jobs:
       - name: Upload Finalize regression results
         if: |
           always() &&
-          (steps.fin.outcome == 'failure' || steps.fin.outcome == 'success')
+          (steps.fin_reg.outcome == 'failure' || steps.fin_reg.outcome == 'success')
         uses: actions/upload-artifact@v3
         with:
           name: finalize-regression-results
@@ -87,7 +87,7 @@ jobs:
           retention-days: 14
 
       - name: Run LS-Sign regression
-        id: ls
+        id: ls_reg
         if: github.event.inputs.run_ls_sign_regression == 'true'
         run: yarn playwright test --grep @ls-sign-regression --config playwright-regression.config.ts
         env:
@@ -99,7 +99,7 @@ jobs:
       - name: Upload LS-Sign regression results
         if: |
           always() &&
-          (steps.ls.outcome == 'failure' || steps.ls.outcome == 'success')
+          (steps.ls_reg.outcome == 'failure' || steps.ls_reg.outcome == 'success')
         uses: actions/upload-artifact@v3
         with:
           name: ls-sign-regression-results
