@@ -1,5 +1,5 @@
-name: PW Run Single Spec
-run-name: Run ${{ inputs.specName }} spec on stg ${{ inputs.stage }}
+name: PW On Demand Regression Quality Gate
+run-name: Run regression tests from ${{ github.ref_name }} on stg ${{ inputs.stage }}
 
 on:
   workflow_dispatch:
@@ -8,15 +8,46 @@ on:
         description: Type stage number
         required: true
         type: string
-      specName:
-        type: string
-        required: true
-        description: Type spec name
+      run_finalize_regression:
+        description: Run Finalize regression?
+        required: false
+        type: boolean
+        default: true
+      run_ls_sign_regression:
+        description: Run LS-Sign regression?
+        required: false
+        type: boolean
+        default: true
+      deploy_feature_branch:
+        description: Deploy feature branch?
+        required: false
+        type: boolean
+        default: false
 
 jobs:
-  run_tests:
-    name: Playwright tests run
+  feature_branch_deploy:
+    if: github.event.inputs.deploy_feature_branch == 'true'
+    name: Trigger stage deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: convictional/trigger-workflow-and-wait@v1.6.5
+        with:
+          owner: LinkSquares
+          repo: parvati
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          workflow_file_name: ecs-split-staging.yml
+          ref: ${{ github.ref_name }}
+          wait_interval: 10
+          client_payload: '{"service":"${{ github.event.inputs.stage }}"}'
+
+  run_tests:
+    needs: feature_branch_deploy
+    if: |
+      always() &&
+      (needs.feature_branch_deploy.result == 'success' || needs.feature_branch_deploy.result == 'skipped')
+    name: Playwright tests run
+    runs-on: [ self-hosted, ubuntu-2204, staging1, xlarge]
     container:
       image: mcr.microsoft.com/playwright:v1.31.0-focal
       options: --ipc=host
@@ -24,6 +55,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref_name }}
 
       - name: Setup node
         uses: actions/setup-node@v3
@@ -33,21 +66,44 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      - name: Run tests
-        run: yarn playwright test ${{ github.event.inputs.specName }} --config playwright-regression.config.ts
+      - name: Run Finalize regression
+        if: github.event.inputs.run_finalize_regression == 'true'
+        run: yarn playwright test --grep @finalize-regression --config playwright-regression.config.ts
         env:
           E2E_FINALIZE_PASSWORD: ${{ secrets.USER_PASSWORD }}
           E2E_FINALIZE_WEB_BASE_URL: https://automation.finalize-app-${{ github.event.inputs.stage }}.linksquares.dev
           E2E_GRAPHQL_BASE_URL: https://app.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev/graphql
           E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev
 
-      - name: Upload test results
-        if: always()
+      - name: Upload Finalize regression results
+        if: |
+          always() &&
+          (failure() || success())
         uses: actions/upload-artifact@v3
         with:
-          name: single-spec-report
+          name: finalize-regression-results
           path: e2e/report
+          retention-days: 14
+
+      - name: Run LS-Sign regression
+        if: github.event.inputs.run_ls_sign_regression == 'true'
+        run: yarn playwright test --grep @ls-sign-regression --config playwright-regression.config.ts
+        env:
+          E2E_FINALIZE_PASSWORD: ${{ secrets.USER_PASSWORD }}
+          E2E_FINALIZE_WEB_BASE_URL: https://automation.finalize-app-${{ github.event.inputs.stage }}.linksquares.dev
+          E2E_GRAPHQL_BASE_URL: https://app.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev/graphql
+          E2E_PUBLIC_API_BASE_URL: https://api.analyze-app-${{ github.event.inputs.stage }}.linksquares.dev
+
+      - name: Upload LS-Sign regression results
+        if: |
+          always() &&
+          (failure() || success())
+        uses: actions/upload-artifact@v3
+        with:
+          name: ls-sign-regression-results
+          path: e2e/report
+          retention-days: 14
 
       - name: Adding note
         if: always()
-        run: echo 'Open index.html from the single-spec-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
+        run: echo 'Open the index.html from regression-run-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
