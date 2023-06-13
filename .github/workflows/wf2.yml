@@ -54,8 +54,8 @@ jobs:
       - name: Adding note
         if: always()
         run: |
-          echo 'Finalize regression status is ${{ github.event.inputs.deploy_feature_branch }}.' >> $GITHUB_STEP_SUMMARY
-          echo 'LS-Sign regression status is ${{ github.event.inputs.deploy_feature_branch }}.' >> $GITHUB_STEP_SUMMARY
+          echo 'Finalize regression status is: "${{ github.event.inputs.deploy_feature_branch }}".' >> $GITHUB_STEP_SUMMARY
+          echo 'LS-Sign regression status is: "${{ github.event.inputs.deploy_feature_branch }}".' >> $GITHUB_STEP_SUMMARY
           echo 'Open index.html from the nightly-regression-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout
