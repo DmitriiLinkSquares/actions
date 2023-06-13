@@ -51,7 +51,7 @@ jobs:
     timeout-minutes: 45
     steps:
 
-      - name: Adding note
+      - name: Adding ${{ github.event.inputs.deploy_feature_branch }}
         if: always()
         run: |
           echo 'Finalize regression status is: "${{ github.event.inputs.deploy_feature_branch }}".' >> $GITHUB_STEP_SUMMARY
