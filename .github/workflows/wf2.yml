@@ -54,12 +54,9 @@ jobs:
       - name: Adding note
         if: always()
         run: |
-          cat << EOF
-          usage: up [--level <n>| -n <levels>][--help][--version]
-
-          Report bugs to:
-          up home page:
-          EOF
+          echo 'Finalize regression status is ${{ github.event.inputs.deploy_feature_branch }}.' >> $GITHUB_STEP_SUMMARY
+          echo 'LS-Sign regression status is ${{ github.event.inputs.deploy_feature_branch }}.' >> $GITHUB_STEP_SUMMARY
+          echo 'Open index.html from the nightly-regression-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout
         uses: actions/checkout@v3
