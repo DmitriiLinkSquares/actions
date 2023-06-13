@@ -53,6 +53,14 @@ jobs:
       options: --ipc=host
     timeout-minutes: 45
     steps:
+
+      - name: Adding note
+        if: always()
+        run: echo '
+          Finalize regression status is ${{ github.event.inputs.deploy_feature_branch }}.
+          LS-Sign regression status is ${{ github.event.inputs.deploy_feature_branch }}.
+          Open index.html from the nightly-regression-report artifact to read the report.' >> $GITHUB_STEP_SUMMARY
+
       - name: Checkout
         uses: actions/checkout@v3
         with:
