@@ -13,25 +13,10 @@ on:
           - ls-sign
 
 jobs:
-  feature_branch_deploy:
-    name: Trigger stage deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    steps:
-      - uses: convictional/trigger-workflow-and-wait@v1.6.5
-        with:
-          owner: LinkSquares
-          repo: parvati
-          github_token: ${{ secrets.ACCESS_TOKEN }}
-          workflow_file_name: ecs-split-staging.yml
-          ref: develop
-          wait_interval: 10
-          client_payload: '{"service":"27"}'
 
   run_tests:
     name: Run Playwright tests
     runs-on: ubuntu-latest
-    needs: feature_branch_deploy
     timeout-minutes: 45
     steps:
       - name: Adding note
