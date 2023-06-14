@@ -24,7 +24,7 @@ jobs:
         run: |
           RED='\033[0;31m'
           GREEN='\033[0;32m'
-          echo -e 'Finalize regression status is: ${ GREEN } "${{ github.event.inputs.regression_suite == 'finalize' && 'success!' || 'failed :(' }}".' >> $GITHUB_STEP_SUMMARY
+          echo -e 'Finalize regression status is: "${{ github.event.inputs.regression_suite == 'finalize' && ' ${ GREEN } success!' || 'failed :(' }}".' >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout
         uses: actions/checkout@v3
