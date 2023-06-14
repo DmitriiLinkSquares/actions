@@ -22,7 +22,7 @@ jobs:
       - name: Adding note
         if: always()
         run: |
-          echo -e 'Finalize regression status is: **"${{ github.event.inputs.regression_suite == 'finalize' && 'SUCCESS!' }}"** :rocket:' >> $GITHUB_STEP_SUMMARY
+          echo -e 'Finalize regression status is: **"${{ github.event.inputs.regression_suite == 'finalize' && 'SUCCESS!' || 'FAILED :rocket:' }}"** :rocket:' >> $GITHUB_STEP_SUMMARY
 
       - name: Checkout
         uses: actions/checkout@v3
